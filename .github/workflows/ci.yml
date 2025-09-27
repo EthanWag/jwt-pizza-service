@@ -58,7 +58,9 @@ jobs:
             },
             factory: {
               url: 'https://pizza-factory.cs329.click',
-              
+            }
+          }
+          
       - name: Update coverage
         run: |
           coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json)
