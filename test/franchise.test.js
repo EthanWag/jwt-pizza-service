@@ -1,30 +1,63 @@
 const request = require('supertest');
 const app = require('../src/service');
 
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
-const testFranchisee = {name: 'test franchisee', email: 'frn@test.com', password: 'b', roles: [{role: 'franchisee'}]};
+const testAdmin = {name:'test admin',email:'a@test.com', password:'a'}
+const testFranchisee = {name:'pizza franchisee', email:'f@jwt.com', password:'franchisee'};
 
+let franchiseeToken;
+let franchiseId;
+let userId;
 
 // tests franchisee endpoints
-beforeAll(async () => {
-    // register a new franchisee here
-    // Add a few franchises to that user
+beforeEach(async () => {
+    // Logs in the franchisee
+    const res = await request(app).put('/api/auth').send(testFranchisee);
+    expect(res.status).toBe(200);
 
-    // methods covered
-    // create franchisee
-    // create franchise
-    // maybe login in?
+    // save the token and Id
+    userId = res.body.user.id;
+    franchiseeToken = res.body.token;
+    franchiseId = res.body.user.roles.find(r => r.role === 'franchisee').objectId;
+    expect(franchiseId).toBeGreaterThan(-1);
 });
 
-test('franchisee login', async () => {
-
+afterEach(async () => {
+    // Deletes the franchisee
+    const res = await request(app).delete('/api/auth').set('Authorization', `Bearer ${franchiseeToken}`);
+    expect(res.status).toBe(200);
 });
 
-test('create franchise', async () => {
+test('creation and delation of stores', async () => {
 
+    const storeName = 'Windhelm';
+
+    let res = await request(app).post(`/api/franchise/${franchiseId}/store`).send({name: storeName, "admins": [{"email": testFranchisee.email}]}).set('Authorization', `Bearer ${franchiseeToken}`);
+    expect(res.status).toBe(200);
+
+    // check to see if I got the same store back
+    const testStore = res.body;
+    expect(testStore.name).toBe(storeName);
+    expect(testStore.franchiseId).toBe(franchiseId);
+
+    // want to clean up my database so I'll also delete it
+    res = await request(app).delete(`/api/franchise/${franchiseId}/store/${testStore.id}`).set('Authorization', `Bearer ${franchiseeToken}`);
+    expect(res.status).toBe(200);
 });
 
-test('get franchise with id', async () => {
+test('get stores by Id', async () => {
+    const storeNames = ['Solitude', 'Whiterun', 'Riften'];
+
+    for (let storeName of storeNames) {
+        let res = await request(app).post(`/api/franchise/${franchiseId}/store`).send({name: storeName, "admins": [{"email": testFranchisee.email}]}).set('Authorization', `Bearer ${franchiseeToken}`);
+        expect(res.status).toBe(200);
+    }
+
+    // now get the franchises by userId
+
+    res = await request(app).get(`/api/franchise/${userId}`).set('Authorization', `Bearer ${franchiseeToken}`);
+    expect(res.status).toBe(200);
+
+
 
 });
 

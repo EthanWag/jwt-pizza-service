@@ -12,7 +12,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // delete the user
+  // TODO: 
+  // not a good test to see if the user is deleted
   await request(app).delete('/api/user').set('Authorization', `Bearer ${testUserAuthToken}`);
   if(app && app.close){
     await app.close();
@@ -27,8 +28,4 @@ test('login', async () => {
   const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
   console.log(password)
-});
-
-test('logout', async () => {
-
 });
