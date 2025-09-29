@@ -32,7 +32,7 @@ test('get menu', async () => {
   const menu = res.body;
 
   // possible menu items given the default values
-  for(item of menu){
+  for(let item of menu){
     expect(item.title).toEqual(expect.any(String));
     expect(item.description).toEqual(expect.any(String));
     expect(item.price).toEqual(expect.any(Number));
