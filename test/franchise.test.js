@@ -46,9 +46,10 @@ test('creation and delation of stores', async () => {
 
 test('get stores by Id', async () => {
     const storeNames = ['Solitude', 'Whiterun', 'Riften'];
+    let res = null;
 
     for (let storeName of storeNames) {
-        let res = await request(app).post(`/api/franchise/${franchiseId}/store`).send({name: storeName, "admins": [{"email": testFranchisee.email}]}).set('Authorization', `Bearer ${franchiseeToken}`);
+        res = await request(app).post(`/api/franchise/${franchiseId}/store`).send({name: storeName, "admins": [{"email": testFranchisee.email}]}).set('Authorization', `Bearer ${franchiseeToken}`);
         expect(res.status).toBe(200);
     }
 
@@ -56,15 +57,40 @@ test('get stores by Id', async () => {
 
     res = await request(app).get(`/api/franchise/${userId}`).set('Authorization', `Bearer ${franchiseeToken}`);
     expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1); // I just want to test 1 franchise
 
+    // we can assume this because of our last test
+    const testFranchise = res.body[0];
 
-
+    for(let store of testFranchise.stores) {
+        expect(storeNames.includes(store.name)).toBe(true);
+        const res = await request(app).delete(`/api/franchise/${franchiseId}/store/${store.id}`).set('Authorization', `Bearer ${franchiseeToken}`);
+        expect(res.status).toBe(200);
+    }
 });
 
-test('get franchises with obj', async () => {
+test('Making a new franchise', async () => {
 
-});
+    const newFranchise = 'ABC Pizza';
+    // I'm to want to sign in as an admin
 
-test('Delete franchise', async () => {
+    let res = await request(app).put('/api/auth').send(testAdmin);
+    expect(res.status).toBe(200);
+    const adminToken = res.body.token;
 
+    // create the new franchise
+    res = await request(app).post('/api/franchise').send({"name": newFranchise, "admins": [{"email": "f@jwt.com"}]}).set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+
+    const testFranchise = res.body;
+
+    // test the data that is returned
+    expect(testFranchise.name).toBe(newFranchise);
+    expect(testFranchise.admins.length).toBe(1);
+    expect(testFranchise.admins[0].email).toBe(testFranchisee.email);
+    const id = testFranchise.id;
+
+    // clean up clean up everybody everywhere
+    res = await request(app).delete(`/api/franchise/${id}`).set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
 });
