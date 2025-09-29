@@ -76,10 +76,41 @@ test('user makes order', async () => {
   expect(order.items[0].price).toBe(option.price);
 });
 
-/*
+
 test('user gets all their orders', async () => {
 
-  console.log('yaaa queen')
+  // lets make a bunch of orders
+  let res = await request(app).get('/api/order/menu');
+  expect(res.status).toBe(200);
 
+  
+  expect(res.body.length).toBeGreaterThan(0);
+
+  const menu = res.body;
+
+  for(let i = 0; i < 3; i++){
+
+    const option = menu[0]; // just choose the first one
+
+    res = await request(app).post('/api/order').set('Authorization', `Bearer ${token}`).send({
+      franchiseId: 1,
+      storeId: 1,
+      items: [
+        {
+          menuId: option.id,
+          description: option.description,
+          price: option.price,
+        },
+      ],
+    });
+    expect(res.status).toBe(200); // just checking to make sure everything went through
+
+  }
+
+  res = await request(app).get('/api/order').set('Authorization', `Bearer ${token}`);
+  expect(res.status).toBe(200);
+
+  const orders = res.body.orders;
+
+  expect(orders.length).toBeGreaterThanOrEqual(3); // we should have at least 3 orders
 });
-*/

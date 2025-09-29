@@ -3,17 +3,17 @@ const app = require('../src/service');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
+let testUserId;
 
 beforeAll(async () => {
   testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
   const registerRes = await request(app).post('/api/auth').send(testUser);
   testUserAuthToken = registerRes.body.token;
+  testUserId = registerRes.body.user.id;
   expect(testUserAuthToken).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/); // custom test to check if UUID
 });
 
 afterAll(async () => {
-  // TODO: 
-  // not a good test to see if the user is deleted
   await request(app).delete('/api/user').set('Authorization', `Bearer ${testUserAuthToken}`);
 
   if(app && app.close){
@@ -29,4 +29,19 @@ test('login', async () => {
   const { password, ...user } = { ...testUser, roles: [{ role: 'diner' }] };
   expect(loginRes.body.user).toMatchObject(user);
   console.log(password)
+});
+
+test('update', async () => {
+
+  const newName = 'updated name ' + Math.random().toString(36).substring(2, 5);
+  const res = await request(app).put(`/api/user/${testUserId}`).set('Authorization', `Bearer ${testUserAuthToken}`).send({
+    name: newName,
+    password: testUser.password,
+    email: testUser.email,
+  });
+  expect(res.status).toBe(200);
+  expect(res.body.user.name).toBe(newName);
+
+  testUser.name = newName;
+
 });
