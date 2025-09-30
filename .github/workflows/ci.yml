@@ -63,8 +63,15 @@ jobs:
             },
           };" > src/config.js
 
+      - name: Start Server
+        run: |
+          npm start &
+          sleep 5  # Give the server time to start
+        env:
+          NODE_ENV: test
+      
       - name: Make Test Data
-        run: ./scripts/generatePizzaData.sh http://localhost:3306
+        run: ./scripts/generatePizzaData.sh http://localhost:3000
 
       - name: Tests
         run: npm test
