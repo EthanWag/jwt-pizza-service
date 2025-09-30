@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('../src/service');
 
-const testAdmin = {name:'test admin',email:'a@test.com', password:'a'}
+const testAdmin = {name:'常用名字',email:'a@jwt.com', password:'admin'}
 const testFranchisee = {name:'pizza franchisee', email:'f@jwt.com', password:'franchisee'};
 
 let franchiseeToken;
@@ -62,10 +62,17 @@ test('get stores by Id', async () => {
     // we can assume this because of our last test
     const testFranchise = res.body[0];
 
-    for(let store of testFranchise.stores) {
-        expect(storeNames.includes(store.name)).toBe(true);
-        const res = await request(app).delete(`/api/franchise/${franchiseId}/store/${store.id}`).set('Authorization', `Bearer ${franchiseeToken}`);
-        expect(res.status).toBe(200);
+    // check to see if all the stores are inside the franchise
+    for(let testNames of storeNames) {
+        expect(testFranchise.stores.find(s => s.name === testNames)).toBeDefined();
+    }
+
+    // clean up clean up everybody everywhere
+    for (let store of testFranchise.stores) {
+        if(storeNames.find(n => n === store.name)) {
+            res = await request(app).delete(`/api/franchise/${franchiseId}/store/${store.id}`).set('Authorization', `Bearer ${franchiseeToken}`);
+            expect(res.status).toBe(200);
+        }
     }
 });
 

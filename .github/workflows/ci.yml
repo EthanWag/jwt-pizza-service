@@ -52,6 +52,7 @@ jobs:
                 user: 'root',
                 password: 'tempdbpassword',
                 database: 'pizza',
+                port: 3306,
                 connectTimeout: 60000,
               },
               listPerPage: 10,
@@ -61,6 +62,9 @@ jobs:
               apiKey: '${{ secrets.FACTORY_API_KEY }}',
             },
           };" > src/config.js
+
+      - name: Make Test Data
+        run: ./scripts/generatePizzaData.sh http://localhost:3306
 
       - name: Tests
         run: npm test
