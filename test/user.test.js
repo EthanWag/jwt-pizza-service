@@ -45,3 +45,15 @@ test('update', async () => {
   testUser.name = newName;
 
 });
+
+test('list users unauthorized', async () => {
+  const listUsersRes = await request(app).get('/api/user');
+  expect(listUsersRes.status).toBe(401);
+});
+
+test('list users', async () => {
+  const listUsersRes = await request(app)
+    .get('/api/user')
+    .set('Authorization', 'Bearer ' + testUserAuthToken);
+  expect(listUsersRes.status).toBe(200);
+});
