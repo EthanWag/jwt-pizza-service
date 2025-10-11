@@ -1,7 +1,9 @@
 const express = require('express');
 const { asyncHandler } = require('../endpointHelper.js');
-const { DB, Role } = require('../database/database.js');
+const { DB } = require('../database/database.js');
+const { Role } = require('../model/model.js')
 const { authRouter, setAuth } = require('./authRouter.js');
+const { readAuthToken, isDefined } = require('./misc.js')
 
 const userRouter = express.Router();
 
@@ -65,13 +67,21 @@ userRouter.get(
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
 
-    const name = req.body;
-    const token = req.headers.authorization;
-    if(!(await DB.isLoggedIn(token))) return res.status(401).json({ message: 'unauthorized'});
+    const token = readAuthToken(req)
 
+    const userData = await DB.getUserByToken(token);
+    const user = userData.user[0]; // gets the first user (shouldn't even be a second but just in case)
+    const roles = userData.roles;
 
-    // && !user.isRole(Role.Admin)
-    res.json({});
+    if(!(await DB.isLoggedIn(token)) || !user || !roles.some(index => index.role === Role.Admin)) return res.status(401).json({ message: 'Unauthorized'});
+
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const name = req.query.name || undefined
+
+    const users = await DB.getUsers(page,limit,name);
+
+    res.json({users: users});
   })
 );
 

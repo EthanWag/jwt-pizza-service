@@ -75,6 +75,33 @@ class DB {
     }
   }
 
+  async getUserByToken(myToken){
+
+    const token = this.getTokenSignature(myToken)
+
+    const connection = await this.getConnection();
+    
+    try {
+      const resAuth = await this.query(connection, `SELECT userId FROM auth WHERE token=?`,[token]);
+
+      // checks to see if they have a valid token
+      if(resAuth.length <= 0){
+        throw new StatusCodeError('unknown user', 404);
+      }
+      const userId = resAuth[0].userId; // Just use the first login
+
+      const user = await this.query(connection, `SELECT * FROM user WHERE id=?`,[userId]);
+      const roleResult = await this.query(connection, 'SELECT * FROM userRole WHERE userId=?',[userId])
+      const roles = roleResult.map((r) => {
+        return { role: r.role };
+      });
+      return { user: user, roles: roles};
+
+    } finally {
+      connection.end()
+    }
+  }
+
   async updateUser(userId, name, email, password) {
     const connection = await this.getConnection();
     try {
@@ -84,7 +111,7 @@ class DB {
         params.push(`password='${hashedPassword}'`);
       }
       if (email) {
-        params.push(`email='${email}'`);
+        params.push(`email='${email}'`);ƒ
       }
       if (name) {
         params.push(`name='${name}'`);
@@ -125,6 +152,24 @@ class DB {
     const connection = await this.getConnection();
     try {
       await this.query(connection, `DELETE FROM auth WHERE token=?`, [token]);
+    } finally {
+      connection.end();
+    }
+  }
+
+  async getUsers(page=1,limit=10,search=false){
+    const connection = await this.getConnection();
+    try {
+      if (search){
+        const test = await this.query(connection,`SELECT id, name, email FROM user WHERE name LIKE ? ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`, [`%${search}%`]);
+        return test
+      }else{
+        return await this.query(
+          connection, 
+          `SELECT id, name, email FROM user ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`);
+      }
+    } catch (error){
+      throw new StatusCodeError("Internal SQL Error",500)
     } finally {
       connection.end();
     }

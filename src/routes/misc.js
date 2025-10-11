@@ -6,6 +6,13 @@ function readAuthToken(req) {
     return null;
 }
 
+function isDefined(val){
+
+    const res = val != null
+    return res
+}
+
 module.exports = {
-    readAuthToken
+    readAuthToken,
+    isDefined
 }

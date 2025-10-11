@@ -1,7 +1,9 @@
 const request = require('supertest');
 const app = require('../src/service');
 
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
+const testUser = { name: 'Mr T', email: 'reg@test.com', password: 'a' };
+const testAdmin = {name:'常用名字',email:'a@jwt.com', password:'admin'}
+
 let testUserAuthToken;
 let testUserId;
 
@@ -46,14 +48,31 @@ test('update', async () => {
 
 });
 
-test('list users unauthorized', async () => {
+test('list users, no authentication', async () => {
   const listUsersRes = await request(app).get('/api/user');
   expect(listUsersRes.status).toBe(401);
 });
 
-test('list users', async () => {
+test('list users, wrong authentication', async () => {
   const listUsersRes = await request(app)
     .get('/api/user')
     .set('Authorization', 'Bearer ' + testUserAuthToken);
+  expect(listUsersRes.status).toBe(401);
+});
+
+test('list users', async () => {
+
+  // get the test admin
+  let res = await request(app).put('/api/auth').send(testAdmin);
+  expect(res.status).toBe(200);
+  const adminToken = res.body.token;
+
+  const listUsersRes = await request(app)
+    .get('/api/user')
+    .set('Authorization', 'Bearer ' + adminToken);
   expect(listUsersRes.status).toBe(200);
+
+  const response = listUsersRes.body.users;
+
+  console.log(response)
 });
