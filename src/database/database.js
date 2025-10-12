@@ -111,7 +111,7 @@ class DB {
         params.push(`password='${hashedPassword}'`);
       }
       if (email) {
-        params.push(`email='${email}'`);ƒ
+        params.push(`email='${email}'`);
       }
       if (name) {
         params.push(`name='${name}'`);
@@ -160,14 +160,26 @@ class DB {
   async getUsers(page=1,limit=10,search=false){
     const connection = await this.getConnection();
     try {
+      let data;
       if (search){
-        const test = await this.query(connection,`SELECT id, name, email FROM user WHERE name LIKE ? ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`, [`%${search}%`]);
-        return test
+        data = await this.query(connection,`SELECT id, name, email FROM user WHERE name LIKE ? ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`, [`%${search}%`]);
       }else{
-        return await this.query(
-          connection, 
-          `SELECT id, name, email FROM user ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`);
+        data = await this.query(connection,`SELECT id, name, email FROM user ORDER BY name ASC LIMIT ${limit} OFFSET ${((page - 1) * limit)}`);
       }
+
+      const users = [];
+      for(const element of data){
+        const myRoles = await this.query(connection, `SELECT role FROM userRole WHERE userId=?`,[element.id])
+        
+        const newUser = {
+          id: element.id,
+          name: element.name,
+          email: element.email,
+          roles:myRoles
+        }
+        users.push(newUser)
+      }
+      return users
     } catch (error){
       throw new StatusCodeError("Internal SQL Error",500)
     } finally {

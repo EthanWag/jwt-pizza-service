@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('../src/service');
 
-const testUser = { name: 'Mr T', email: 'reg@test.com', password: 'a' };
+const testUser = { name: 'Adam', email: 'reg@test.com', password: 'a' };
 const testAdmin = {name:'常用名字',email:'a@jwt.com', password:'admin'}
 
 let testUserAuthToken;
@@ -72,7 +72,6 @@ test('list users', async () => {
     .set('Authorization', 'Bearer ' + adminToken);
   expect(listUsersRes.status).toBe(200);
 
+  // figure out some cool tests to do witht this
   const response = listUsersRes.body.users;
-
-  console.log(response)
 });
