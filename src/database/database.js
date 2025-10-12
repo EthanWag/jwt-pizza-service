@@ -181,7 +181,7 @@ class DB {
       }
       return users
     } catch (error){
-      throw new StatusCodeError("Internal SQL Error",500)
+      throw new StatusCodeError(`Internal SQL Error:${error}`,500)
     } finally {
       connection.end();
     }

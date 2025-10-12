@@ -71,7 +71,12 @@ test('list users', async () => {
     .get('/api/user')
     .set('Authorization', 'Bearer ' + adminToken);
   expect(listUsersRes.status).toBe(200);
+  expect(listUsersRes.body).toHaveProperty('users');
 
-  // figure out some cool tests to do witht this
-  const response = listUsersRes.body.users;
+  const users = listUsersRes.body.users;
+  expect(users.length).toBeGreaterThanOrEqual(2);
+  expect(users[0]).toHaveProperty('id');
+  expect(users[0]).toHaveProperty('name');
+  expect(users[0]).toHaveProperty('email');
+  expect(users[0]).toHaveProperty('roles');
 });

@@ -3,7 +3,7 @@ const { asyncHandler } = require('../endpointHelper.js');
 const { DB } = require('../database/database.js');
 const { Role } = require('../model/model.js')
 const { authRouter, setAuth } = require('./authRouter.js');
-const { readAuthToken, isDefined } = require('./misc.js')
+const { readAuthToken } = require('./misc.js')
 
 const userRouter = express.Router();
 
