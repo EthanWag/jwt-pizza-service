@@ -25,6 +25,14 @@ userRouter.docs = [
     response: { id: 1, name: '常用名字', email: 'a@jwt.com', roles: [{ role: 'admin' }] },
   },
   {
+    method: 'DELETE',
+    path: '/api/user/:userId',
+    requiresAuth: true,
+    description: 'Deletes a user',
+    example: `curl -X DELETE localhost:3000/api/user/1 -d {"name":"Bad User","id":"1"} -H 'Authorization:Bearer ttttttt'`,
+    response: {message: 'delete successful'}
+  },
+  {
     method: 'PUT',
     path: '/api/user/:userId',
     requiresAuth: true,
@@ -40,6 +48,27 @@ userRouter.get(
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     res.json(req.user);
+  })
+);
+
+userRouter.delete(
+  '/:userId',
+  authRouter.authenticateToken,
+  asyncHandler(async (req,res) => {
+
+    const token = readAuthToken(req);
+
+    const userData = await DB.getUserByToken(token);
+    const user = userData.user[0]; // gets the first user (shouldn't even be a second but just in case)
+    const roles = userData.roles;
+
+    if(!(await DB.isLoggedIn(token)) || !user || !roles.some(index => index.role === Role.Admin)) return res.status(401).json({ message: 'Unauthorized'});
+
+    // get the user token here to delete
+    const userId = Number(req.params.userId)
+    await DB.deleteUser(userId)
+
+    return res.status(200).json({message: 'Successful Delete'})
   })
 );
 
@@ -84,5 +113,7 @@ userRouter.get(
     res.json({users: users});
   })
 );
+
+
 
 module.exports = userRouter;
