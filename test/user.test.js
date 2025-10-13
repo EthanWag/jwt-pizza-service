@@ -79,4 +79,42 @@ test('list users', async () => {
   expect(users[0]).toHaveProperty('name');
   expect(users[0]).toHaveProperty('email');
   expect(users[0]).toHaveProperty('roles');
+
+  await request(app).delete('/api/auth').set('Authorization',`Bearer ${adminToken}`)
+});
+
+test('Delete User no token', async () => {
+
+  const res = await request(app).delete(`/api/user/${1}`).set('Authorization',`Bearer ${'1234egg'}`).send()
+  expect(res.status).toBe(401);
+
+});
+
+test('Delete User not admin', async () => {
+
+  let res = await request(app).delete(`/api/user/${1}`).set('Authorization',`Bearer ${testUserAuthToken}`).send();
+  expect(res.status).toBe(401);
+
+});
+
+test('successful delete', async () => {
+
+  // login as an admin right here
+  const testRes = await request(app).put('/api/auth').send(testAdmin);
+  expect(testRes.status).toBe(200);
+  const adminToken = testRes.body.token;
+
+  const delTestUser = { name: 'dumby', email: 'take@test.com', password: 'b' };
+  // register a new user here
+  const registerRes = await request(app).post('/api/auth').send(delTestUser);
+  const delUserId = registerRes.body.user.id;
+
+  // delete it here
+  let res = await request(app).delete(`/api/user/${delUserId}`).set('Authorization',`Bearer ${adminToken}`).send();
+  expect(res.status).toBe(200);
+
+  // check to see if the 
+
+  const fail = await request(app).put(`/api/user/${delUserId}`).set('Authorization',`Bearer ${adminToken}`);
+  expect(fail.status).toBe(500)
 });
