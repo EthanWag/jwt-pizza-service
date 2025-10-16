@@ -106,14 +106,15 @@ userRouter.get(
 
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
-    const name = req.query.name || undefined
+    let name = req.query.name || undefined
 
+    // uugggghghghghghhh
+    if(name === '*') name = undefined;
+    
     const users = await DB.getUsers(page,limit,name);
 
     res.json({users: users});
   })
 );
-
-
 
 module.exports = userRouter;
