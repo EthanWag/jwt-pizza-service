@@ -107,6 +107,7 @@ class metrics {
         // active users
         this.sendMetricToGrafana('active_users', activeUsers, 'gauge', '1');
         this.sendMetricToGrafana('average_request_latency_ms', totalRequests > 0 ? (latency / totalRequests).toFixed(2) : 0, 'gauge', 'ms');
+        this.sendMetricToGrafana('average_factory_latency_ms', totalRequests > 0 ? (factoryLatency / totalRequests).toFixed(2) : 0, 'gauge', 'ms');
 
         // authentication
         this.sendMetricToGrafana('auth_total_attempts_per_min', (authSuccessAttempts + authFailedAttempts), 'sum', '1');
@@ -137,6 +138,10 @@ class metrics {
       postRequests = 0;
       putRequests = 0;
       deleteRequests = 0;
+
+      // latency
+      latency = 0;
+      factoryLatency = 0;
 
       // authentication metrics
       authSuccessAttempts = 0;

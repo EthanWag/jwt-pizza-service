@@ -42,15 +42,14 @@ orderRouter.docs = [
 ];
 
 // tracks the metrics for the creation of pizzas and it's latency
-orderRouter.post('/', (req, res) => {
+orderRouter.post('/', (req, res, next) => {
 
   res.on('finish', () => {
     if(res.statusCode >= 200 && res.statusCode < 300) {
-      metrics.pizzasSold += req.body.order.items.length;
-      metrics.revenue += req.body.order.items.reduce((acc, item) => acc + item.price, 0);
+      metrics.pizzasSold += req.body.items.length;
+      metrics.revenue += req.body.items.reduce((acc, item) => acc + item.price, 0);
     }
   });
-
   next();
 });
 
@@ -93,12 +92,20 @@ orderRouter.post(
   asyncHandler(async (req, res) => {
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
+
+    const factoryStart = Date.now();
+
     const r = await fetch(`${config.factory.url}/api/order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer ${config.factory.apiKey}` },
       body: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
     });
     const j = await r.json();
+
+    const factoryDuration = Date.now() - factoryStart;
+    metrics.factoryLatency += factoryDuration;
+
+
     if (r.ok) {
       res.send({ order, followLinkToEndChaos: j.reportUrl, jwt: j.jwt });
     } else {
