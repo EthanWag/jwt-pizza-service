@@ -5,6 +5,7 @@ const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
 
 const orderRouter = express.Router();
+const metrics = require('../metrics.js');
 
 orderRouter.docs = [
   {
@@ -39,6 +40,19 @@ orderRouter.docs = [
     response: { order: { franchiseId: 1, storeId: 1, items: [{ menuId: 1, description: 'Veggie', price: 0.05 }], id: 1 }, jwt: '1111111111' },
   },
 ];
+
+// tracks the metrics for the creation of pizzas and it's latency
+orderRouter.post('/', (req, res) => {
+
+  res.on('finish', () => {
+    if(res.statusCode >= 200 && res.statusCode < 300) {
+      metrics.pizzasSold += req.body.order.items.length;
+      metrics.revenue += req.body.order.items.reduce((acc, item) => acc + item.price, 0);
+    }
+  });
+
+  next();
+});
 
 // getMenu
 orderRouter.get(
