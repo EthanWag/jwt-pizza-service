@@ -1,5 +1,5 @@
 const os = require('os');
-const config = require('./config');
+const config = require('./config.js');
 
 // general stats
 let totalRequests = 0;
@@ -178,7 +178,7 @@ class metrics {
                     [type]: {
                       dataPoints: [
                         {
-                          asInt: metricValue,
+                          asDouble: metricValue,
                           timeUnixNano: Date.now() * 1000000,
                         },
                       ],
@@ -197,10 +197,10 @@ class metrics {
       }
     
       const body = JSON.stringify(metric);
-      fetch(`${config.url}`, {
+      fetch(`${config.metrics.url}`, {
         method: 'POST',
         body: body,
-        headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${config.metrics.apiKey}`, 'Content-Type': 'application/json' },
       })
         .then((response) => {
           if (!response.ok) {
