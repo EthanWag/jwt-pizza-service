@@ -86,6 +86,7 @@ class metrics {
                   failedPizzaCreations += 1;
                 }
               }
+              break;
             default:
               break;
           }
