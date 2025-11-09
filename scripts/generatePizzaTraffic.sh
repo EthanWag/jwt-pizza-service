@@ -38,7 +38,7 @@ pid1=$!
 
 # Simulate a user with an invalid email and password every 25 seconds
 while true; do
-  result=$(execute_curl "-X PUT \"$host/api/auth\" -d '{\"email\":\"unknown@jwt.com\", \"password\":\"bad\"}' -H 'Content-Type: application/json'")
+  result=$(execute_curl "-X PUT $host/api/auth -d "{\"email\":\"unknown@jwt.com\", \"password\":\"bad\"}" -H 'Content-Type: application/json'")
   echo "Logging in with invalid credentials..." $result
   sleep 25
 done &

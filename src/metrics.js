@@ -25,20 +25,8 @@ let totalRevenue = 0;
 
 class metrics {
 
-  // TODO:metrics I need to keep track of
-  // HTTP request count x
-  // Active users
-  // Authentication attempts/minuite x
-    // wheather they failed or succeeded x
-  // pizzas
-    // Sold/minute x
-    // Create failures x
-    // Revenue/minute x
-  // Latency of requests
-    // Service endpoint x
-    // Pizza creation x
-
     static requestTracker(req, res, next) {
+
         const start = Date.now();
 
         switch (req.method) {
@@ -64,28 +52,40 @@ class metrics {
           const duration = Date.now() - start;
           latency += duration;
 
-          const endpoint = req.path;
-          const statusCode = res.statusCode;
+          const endpoint = req.originalUrl.split('?')[0];
+          const ok = res.statusCode >= 200 && res.statusCode < 300;
 
           // track active users
           switch (endpoint) {
             case '/api/auth':
-              if (req.method === 'POST' && statusCode === 200) {
+              if (req.method === 'POST' && ok) {
                 // Register
                 authSuccessAttempts += 1;
                 activeUsers += 1;
-              } else if (req.method === 'PUT' && statusCode === 200) {
+              } else if (req.method === 'PUT' && ok) {
                 // Login
                 authSuccessAttempts += 1;
                 activeUsers += 1;
-              } else if (req.method === 'DELETE' && statusCode === 200) {
+              } else if (req.method === 'DELETE' && ok) {
                 // Logout
                 activeUsers = Math.max(0, activeUsers - 1);
-              } else if (req.method === 'POST' || req.method === 'PUT') {
+              } else if ((req.method === 'POST' || req.method === 'PUT') && !ok) {
                 // Failed register or login
                 authFailedAttempts += 1;
               }
               break;
+            case '/api/order':
+              if (req.method === 'POST') {
+                if (ok) {
+                  pizzasSold += req.body.items.length;
+                  revenue += req.body.items.reduce((sum, item) => sum + item.price, 0);
+                  totalRevenue += revenue;
+
+                } else {
+                  // Failed pizza creation
+                  failedPizzaCreations += 1;
+                }
+              }
             default:
               break;
           }
@@ -98,6 +98,33 @@ class metrics {
         
         // list of metrics I'm going to send
         // request metrics
+
+        /*
+        console.log(`totalRequests: ${totalRequests}`);
+        console.log(`getRequests: ${getRequests}`);
+        console.log(`postRequests: ${postRequests}`);
+        console.log(`putRequests: ${putRequests}`);
+        console.log(`deleteRequests: ${deleteRequests}`);
+
+        console.log(`activeUsers: ${activeUsers}`);
+        console.log(`latency: ${latency}`);
+        console.log(`factoryLatency: ${factoryLatency}`);
+        console.log(`averageRequestLatency: ${totalRequests > 0 ? (latency / totalRequests).toFixed(2) : 0}`);
+        console.log(`averageFactoryLatency: ${totalRequests > 0 ? (factoryLatency / totalRequests).toFixed(2) : 0}`);
+
+        console.log(`authSuccessAttempts: ${authSuccessAttempts}`);
+        console.log(`authFailedAttempts: ${authFailedAttempts}`);
+        console.log(`authTotalAttempts: ${(authSuccessAttempts + authFailedAttempts)}`);
+
+        console.log(`pizzasSold: ${pizzasSold}`);
+        console.log(`revenue: ${revenue}`);
+        console.log(`totalRevenue: ${totalRevenue}`);
+        console.log(`failedPizzaCreations: ${failedPizzaCreations}`);
+
+        console.log(`cpuUsagePercentage: ${this.getCpuUsagePercentage()}`);
+        console.log(`memoryUsagePercentage: ${this.getMemoryUsagePercentage()}`);
+        */
+
         this.sendMetricToGrafana('http_request_count_per_min', totalRequests, 'sum', '1');
         this.sendMetricToGrafana('http_get_request_count_per_min', getRequests, 'sum', '1');
         this.sendMetricToGrafana('http_post_request_count_per_min', postRequests, 'sum', '1');
@@ -119,10 +146,11 @@ class metrics {
         this.sendMetricToGrafana('memory_usage_percentage', this.getMemoryUsagePercentage(), 'gauge', 'percent');
         
         // pizza metrics
-        this.sendMetricToGrafana('pizza_revenue_per_min', revenue, 'sum', 'USD');
-        this.sendMetricToGrafana('total_pizza_revenue', totalRevenue, 'sum', 'USD');
+        this.sendMetricToGrafana('pizza_revenue_per_min', revenue, 'sum', 'BTC');
+        this.sendMetricToGrafana('total_pizza_revenue', totalRevenue, 'sum', 'BTC');
         this.sendMetricToGrafana('failed_pizza_creations_per_min', failedPizzaCreations, 'sum', '1');
         this.sendMetricToGrafana('sold_pizzas_per_min', pizzasSold, 'sum', '1');
+        
 
         // reset all of our variable
         this.reset();
@@ -153,8 +181,10 @@ class metrics {
     }
 
     static getCpuUsagePercentage() {
-        const cpuUsage = os.loadavg()[0] / os.cpus().length;
-        return cpuUsage.toFixed(2) * 100;
+      const cpus = os.cpus();
+      const loadAvg = os.loadavg()[0]; // 1-minute load average
+      const cpuUsage = (loadAvg / cpus.length) * 100; // Normalize by number of CPUs
+      return cpuUsage.toFixed(2); // Return as a percentage with 2 decimal places
     }
     
     static getMemoryUsagePercentage() {

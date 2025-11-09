@@ -41,18 +41,6 @@ orderRouter.docs = [
   },
 ];
 
-// tracks the metrics for the creation of pizzas and it's latency
-orderRouter.post('/', (req, res, next) => {
-
-  res.on('finish', () => {
-    if(res.statusCode >= 200 && res.statusCode < 300) {
-      metrics.pizzasSold += req.body.items.length;
-      metrics.revenue += req.body.items.reduce((acc, item) => acc + item.price, 0);
-    }
-  });
-  next();
-});
-
 // getMenu
 orderRouter.get(
   '/menu',
