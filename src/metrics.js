@@ -99,32 +99,9 @@ class metrics {
         
         // list of metrics I'm going to send
         // request metrics
-
-        /*
-        console.log(`totalRequests: ${totalRequests}`);
-        console.log(`getRequests: ${getRequests}`);
-        console.log(`postRequests: ${postRequests}`);
-        console.log(`putRequests: ${putRequests}`);
-        console.log(`deleteRequests: ${deleteRequests}`);
-
-        console.log(`activeUsers: ${activeUsers}`);
-        console.log(`latency: ${latency}`);
-        console.log(`factoryLatency: ${factoryLatency}`);
-        console.log(`averageRequestLatency: ${totalRequests > 0 ? (latency / totalRequests).toFixed(2) : 0}`);
-        console.log(`averageFactoryLatency: ${totalRequests > 0 ? (factoryLatency / totalRequests).toFixed(2) : 0}`);
-
-        console.log(`authSuccessAttempts: ${authSuccessAttempts}`);
-        console.log(`authFailedAttempts: ${authFailedAttempts}`);
-        console.log(`authTotalAttempts: ${(authSuccessAttempts + authFailedAttempts)}`);
-
-        console.log(`pizzasSold: ${pizzasSold}`);
-        console.log(`revenue: ${revenue}`);
-        console.log(`totalRevenue: ${totalRevenue}`);
-        console.log(`failedPizzaCreations: ${failedPizzaCreations}`);
-
-        console.log(`cpuUsagePercentage: ${this.getCpuUsagePercentage()}`);
-        console.log(`memoryUsagePercentage: ${this.getMemoryUsagePercentage()}`);
-        */
+        console.log('Sending metrics to Grafana...');
+        console.log('-----------------------------------');
+        console.log('Total Requests:', totalRequests);
 
         this.sendMetricToGrafana('http_request_count_per_min', totalRequests, 'sum', '1');
         this.sendMetricToGrafana('http_get_request_count_per_min', getRequests, 'sum', '1');
@@ -200,8 +177,17 @@ class metrics {
       const metric = {
         resourceMetrics: [
           {
+            resource: {
+              attributes: [
+                {
+                  key: 'service.name',
+                  value: { stringValue: config.metrics.source || 'unknown-service' },
+                },
+              ],
+            },
             scopeMetrics: [
               {
+                scope: { name: 'metrics-collector' },
                 metrics: [
                   {
                     name: metricName,
@@ -209,8 +195,9 @@ class metrics {
                     [type]: {
                       dataPoints: [
                         {
-                          asDouble: metricValue,
-                          timeUnixNano: Date.now() * 1000000,
+                          attributes: [],
+                          asDouble: parseFloat(metricValue),
+                          timeUnixNano: Date.now() * 1e6,
                         },
                       ],
                     },
@@ -223,28 +210,29 @@ class metrics {
       };
     
       if (type === 'sum') {
-        metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].aggregationTemporality = 'AGGREGATION_TEMPORALITY_CUMULATIVE';
+        metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].aggregationTemporality =
+          'AGGREGATION_TEMPORALITY_CUMULATIVE';
         metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].isMonotonic = true;
       }
     
       const body = JSON.stringify(metric);
-      fetch(`${config.metrics.url}`, {
+      fetch(config.metrics.url, {
         method: 'POST',
-        body: body,
-        headers: { Authorization: `Bearer ${config.metrics.apiKey}`, 'Content-Type': 'application/json' },
+        body,
+        headers: {
+          Authorization: `Bearer ${config.metrics.apiKey}`,
+          'Content-Type': 'application/json',
+        },
       })
-        .then((response) => {
+        .then(async (response) => {
+          const text = await response.text();
           if (!response.ok) {
-            response.text().then((text) => {
-              console.error(`Failed to push metrics data to Grafana: ${text}\n${body}`);
-            });
+            console.error(`❌ Failed to push ${metricName}: ${response.status} ${text}`);
           } else {
-            console.log(`Pushed ${metricName}`);
+            console.log(`✅ Sent ${metricName}`);
           }
         })
-        .catch((error) => {
-          console.error('Error pushing metrics:', error);
-        });
+        .catch((err) => console.error(`Error pushing ${metricName}:`, err));
     }
 }
 
