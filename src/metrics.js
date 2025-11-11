@@ -177,17 +177,8 @@ class metrics {
       const metric = {
         resourceMetrics: [
           {
-            resource: {
-              attributes: [
-                {
-                  key: 'service.name',
-                  value: { stringValue: config.metrics.source || 'unknown-service' },
-                },
-              ],
-            },
             scopeMetrics: [
               {
-                scope: { name: 'metrics-collector' },
                 metrics: [
                   {
                     name: metricName,
@@ -195,9 +186,8 @@ class metrics {
                     [type]: {
                       dataPoints: [
                         {
-                          attributes: [],
-                          asDouble: parseFloat(metricValue),
-                          timeUnixNano: Date.now() * 1e6,
+                          asDouble: metricValue,
+                          timeUnixNano: Date.now() * 1000000,
                         },
                       ],
                     },
@@ -210,29 +200,28 @@ class metrics {
       };
     
       if (type === 'sum') {
-        metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].aggregationTemporality =
-          'AGGREGATION_TEMPORALITY_CUMULATIVE';
+        metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].aggregationTemporality = 'AGGREGATION_TEMPORALITY_CUMULATIVE';
         metric.resourceMetrics[0].scopeMetrics[0].metrics[0][type].isMonotonic = true;
       }
     
       const body = JSON.stringify(metric);
-      fetch(config.metrics.url, {
+      fetch(`${config.metrics.url}`, {
         method: 'POST',
-        body,
-        headers: {
-          Authorization: `Bearer ${config.metrics.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        body: body,
+        headers: { Authorization: `Bearer ${config.metrics.apiKey}`, 'Content-Type': 'application/json' },
       })
-        .then(async (response) => {
-          const text = await response.text();
+        .then((response) => {
           if (!response.ok) {
-            console.error(`❌ Failed to push ${metricName}: ${response.status} ${text}`);
+            response.text().then((text) => {
+              console.error(`Failed to push metrics data to Grafana: ${text}\n${body}`);
+            });
           } else {
-            console.log(`✅ Sent ${metricName}`);
+            console.log(`Pushed ${metricName}`);
           }
         })
-        .catch((err) => console.error(`Error pushing ${metricName}:`, err));
+        .catch((error) => {
+          console.error('Error pushing metrics:', error);
+        });
     }
 }
 
