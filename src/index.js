@@ -6,3 +6,6 @@ setInterval(metrics.sendIntervalMetrics, 60000); // send metrics every 60 second
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
 });
+
+
+// Token for Logging
