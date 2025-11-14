@@ -81,7 +81,7 @@ jobs:
       - name: Start Server
         run: |
           npm start &
-          sleep 5  # Give the server time to start
+          sleep 10  # Give the server time to start
         env:
           NODE_ENV: test
       
