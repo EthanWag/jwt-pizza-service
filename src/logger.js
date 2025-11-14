@@ -6,22 +6,34 @@ class logger {
     const originalJson = res.json;
     const originalEnd = res.end;
   
-    res.send = (resBody) => {
-      this.logResponse(req, res, resBody);
+    res.send = function(resBody) {
+      try {
+        logger.logResponse(req, this, resBody);
+      } catch (err) {
+        console.error('Logging error in send:', err?.message);
+      }
       res.send = originalSend;
-      return res.send(resBody);
+      return originalSend.call(this, resBody);
     };
   
-    res.json = (resBody) => {
-      this.logResponse(req, res, resBody);
+    res.json = function(resBody) {
+      try {
+        logger.logResponse(req, this, resBody);
+      } catch (err) {
+        console.error('Logging error in json:', err?.message);
+      }
       res.json = originalJson;
-      return res.json(resBody);
+      return originalJson.call(this, resBody);
     };
   
-    res.end = (resBody) => {
-      this.logResponse(req, res, resBody);
+    res.end = function(resBody) {
+      try {
+        logger.logResponse(req, this, resBody);
+      } catch (err) {
+        console.error('Logging error in end:', err?.message);
+      }
       res.end = originalEnd;
-      return res.end(resBody);
+      return originalEnd.call(this, resBody);
     };
   
     next();
