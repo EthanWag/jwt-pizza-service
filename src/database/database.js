@@ -367,6 +367,9 @@ class DB {
   }
 
   async query(connection, sql, params) {
+
+    // right here always return what the response was and stick in in the logger.metrics
+
     const [results] = await connection.execute(sql, params);
     return results;
   }
