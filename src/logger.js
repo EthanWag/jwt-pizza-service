@@ -70,11 +70,12 @@ class logger {
       body: body,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.logs.apiKey}`,
+        Authorization: `Bearer ${config.logs.userId}:${config.logs.apiKey}`,
       },
     }).then((res) => {
+      console.log(res);
       if (!res.ok) console.log('Failed to send log to Grafana');
     });
   }
 }
-module.exports = logger; // this is a commnet
+module.exports = logger;
