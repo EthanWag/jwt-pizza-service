@@ -84,6 +84,16 @@ jobs:
           sleep 5  # Give the server time to start
         env:
           NODE_ENV: test
+
+      - name: Check Server Status
+        run: |
+          echo "=== Checking if server is running ==="
+          ps aux | grep "node index.js" | grep -v grep
+          echo "=== Server logs ==="
+          cat server.log
+          echo "=== Testing connection ==="
+          curl -v http://localhost:3000 || echo "Connection failed"
+
       
       - name: Make Test Data
         run: ./scripts/generatePizzaData.sh http://localhost:3000
